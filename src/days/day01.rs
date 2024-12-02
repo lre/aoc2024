@@ -1,5 +1,5 @@
 use crate::{Solution, SolutionPair};
-use std::{borrow::Borrow, cmp::Ordering, fs::read_to_string};
+use std::{cmp::Ordering, fs::read_to_string};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -14,8 +14,8 @@ fn read_the_numbers() -> (Vec<u32>, Vec<u32>) {
     (v1, v2)
 }   
 
-fn add_and_dum(a: &Vec<u32>, b: &Vec<u32>) -> u32 {
-    a.iter().zip(b).map(|(a,b)| a.abs_diff(b.clone())).sum()
+fn add_and_dum(a: &[u32], b: &Vec<u32>) -> u32 {
+    a.iter().zip(b).map(|(a,b)| a.abs_diff(*b)).sum()
 }
 
 pub fn solve() -> SolutionPair {
@@ -43,5 +43,5 @@ pub fn solve() -> SolutionPair {
         }
     }
 
-    (Solution::from(0), Solution::from(0))
+    (Solution::from(sol1), Solution::from(sol2))
 }
