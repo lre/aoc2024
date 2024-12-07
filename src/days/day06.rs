@@ -90,18 +90,19 @@ fn print_matrix(m: &Vec<Vec<char>>, i: usize, j: usize) {
     println!("-------------");
 }
 
-fn does_loop_exists(mut dir: Direction, m: &Vec<Vec<char>>, mut i: usize, mut j: usize) -> bool {
+fn does_loop_exists(mut dir: Direction, mut m: Vec<Vec<char>>, mut i: usize, mut j: usize) -> bool {
     let (h, v) = (m.len(), m[0].len());
     (i, j) = dir.update_pos(i, j);
 
     while i < h && j < v {
-
+        m[i][j] = dir.leave_trail(&m[i][j]);
         if m[i][j] == '#' {
             (i, j) = dir.turn_right().turn_right().update_pos(i, j);
+            let (x, y) = dir.update_pos(i, j);
             match m[i][j] {
-                '+' => return true,
-                '-' => if '-' == dir.leave_trail(&'.') {return true},
-                '|' => if '|' == dir.leave_trail(&'.') {return true},
+                '+' => {print_matrix(&m , x, y);return true},
+                '-' => if '-' == dir.leave_trail(&'.') {print_matrix(&m , x, y); return true},
+                '|' => if '|' == dir.leave_trail(&'.') {print_matrix(&m , x, y); return true},
                 _ => {}
                 
             }
@@ -127,7 +128,7 @@ pub fn solve() -> SolutionPair {
     let (mut i, mut j) = find_guard(&m, &h, &v).expect("No guard found");
     let mut dir = Direction::Up;
 
-    let mut tracks: Vec<Vec<Option<Direction>>> = vec![vec![None; v]; h];
+    // let mut tracks: Vec<Vec<Option<Direction>>> = vec![vec![; v]; h];
 
     while i < h && j < v {
         
@@ -137,7 +138,7 @@ pub fn solve() -> SolutionPair {
             (i, j) = dir.turn_right().turn_right().update_pos(i, j);
             dir = dir.turn_right();
         } 
-            if does_loop_exists(dir.turn_right(), &m, i.clone(), j.clone()) {
+            if does_loop_exists(dir.turn_right(), m.clone(), i.clone(), j.clone()) {
                 sol2 += 1;
                 // println!("Found at {}, {}", i, j);
                 let (x, y) = dir.update_pos(i, j);
