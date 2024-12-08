@@ -78,38 +78,35 @@ impl Direction {
 //}
 
 fn does_loop_exists(
-    dir: &Direction, 
-    m: &Vec<Vec<char>>, 
-    x: &usize, 
-    y: &usize, 
-    mut seen_dir: HashSet<(usize, usize, Direction)>, 
-    seen_pos: &HashSet<(usize, usize)>) -> bool {
-
+    dir: &Direction,
+    m: &Vec<Vec<char>>,
+    x: &usize,
+    y: &usize,
+    mut seen_dir: HashSet<(usize, usize, Direction)>,
+    seen_pos: &HashSet<(usize, usize)>,
+) -> bool {
     // check if we are adding element on top of guard and inbounds
     let (h, v) = (m.len(), m[0].len());
-    
+
     let object = dir.update_pos(*x, *y);
-    if object.0 >= h || object.1 >= v || seen_pos.contains(&(object.0, object.1))
-    { 
-        return false
+    if object.0 >= h || object.1 >= v || seen_pos.contains(&(object.0, object.1)) {
+        return false;
     };
-    
+
     let mut loop_dir = dir.turn_right();
     let (mut i, mut j) = (x.clone(), y.clone());
-    
 
     while i < h && j < v {
         if !seen_dir.insert((i, j, loop_dir)) {
             //print_matrix(m.clone(), &seen_dir, (object.0, object.1));
-            return  true;
+            return true;
         }
 
         (i, j) = loop_dir.update_pos(i, j);
-        if (i < h && j < v && m[i][j] == '#') || ( i == object.0 && j == object.1)  {
+        if (i < h && j < v && m[i][j] == '#') || (i == object.0 && j == object.1) {
             (i, j) = loop_dir.turn_right().turn_right().update_pos(i, j);
             loop_dir = loop_dir.turn_right();
-        } 
-
+        }
     }
 
     false
@@ -131,7 +128,6 @@ pub fn solve() -> SolutionPair {
     // let mut tracks: Vec<Vec<Option<Direction>>> = vec![vec![; v]; h];
 
     while i < h && j < v {
-               
         seen.insert((i, j));
         seen_dir.insert((i, j, dir));
 
@@ -143,9 +139,7 @@ pub fn solve() -> SolutionPair {
         if i < h && j < v && m[i][j] == '#' {
             (i, j) = dir.turn_right().turn_right().update_pos(i, j);
             dir = dir.turn_right();
-        } 
-        
-       
+        }
     }
 
     (Solution::from(seen.len()), Solution::from(sol2))
