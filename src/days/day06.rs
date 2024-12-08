@@ -47,23 +47,6 @@ impl Direction {
         }
     }
 
-    fn leave_trail(self, field: &char) -> char {
-        match field {
-            '^' => '^',
-            '-' => '+',
-            '+' => '+',
-            '|' => '+',
-            '#' => '#',
-            '.' => match self {
-                Direction::Up => '|',
-                Direction::Right => '-',
-                Direction::Down => '|',
-                Direction::Left => '-',
-            },
-            _ => panic!("non valid char: {}", field),
-        }
-    }
-
     fn update_pos(self, i: usize, j: usize) -> (usize, usize) {
         match self {
             Direction::Up => (i - 1, j),
@@ -74,55 +57,72 @@ impl Direction {
     }
 }
 
-fn print_matrix(m: &Vec<Vec<char>>, i: usize, j: usize) {
-    println!("-------------");
-    for (x, v) in m.iter().enumerate(){
-        for (y, c) in v.iter().enumerate(){
-            if x == i && j == y {
-                print!("{}", 'O')
-            } else {
-                print!("{}", c)
-            }
-            
-        }
-        println!("")
-    }
-    println!("-------------");
-}
+//fn print_matrix(mut m: Vec<Vec<char>>, seen: &HashSet<(usize, usize, Direction)>, o: (usize, usize)) {
+//    println!("-------------");
+//    for g in seen {
+//        m[g.0][g.1] = match g.2  {
+//            Direction::Up => '^',
+//            Direction::Right => '>',
+//            Direction::Down => 'v',
+//            Direction::Left => '<',
+//        }
+//    }
+//    m[o.0][o.1] = 'O';
+//    for (_, v) in m.iter().enumerate(){
+//        for (_, c) in v.iter().enumerate(){
+//                print!("{}", c)
+//        }
+//        println!("")
+//    }
+//    println!("-------------");
+//}
 
-fn does_loop_exists(mut dir: Direction, mut m: Vec<Vec<char>>, mut i: usize, mut j: usize) -> bool {
+fn does_loop_exists(
+    dir: &Direction, 
+    m: &Vec<Vec<char>>, 
+    x: &usize, 
+    y: &usize, 
+    mut seen_dir: HashSet<(usize, usize, Direction)>, 
+    seen_pos: &HashSet<(usize, usize)>) -> bool {
+
+    // check if we are adding element on top of guard and inbounds
     let (h, v) = (m.len(), m[0].len());
-    (i, j) = dir.update_pos(i, j);
+    
+    let object = dir.update_pos(*x, *y);
+    if object.0 >= h || object.1 >= v || seen_pos.contains(&(object.0, object.1))
+    { 
+        return false
+    };
+    
+    let mut loop_dir = dir.turn_right();
+    let (mut i, mut j) = (x.clone(), y.clone());
+    
 
     while i < h && j < v {
-        m[i][j] = dir.leave_trail(&m[i][j]);
-        if m[i][j] == '#' {
-            (i, j) = dir.turn_right().turn_right().update_pos(i, j);
-            let (x, y) = dir.update_pos(i, j);
-            match m[i][j] {
-                '+' => {print_matrix(&m , x, y);return true},
-                '-' => if '-' == dir.leave_trail(&'.') {print_matrix(&m , x, y); return true},
-                '|' => if '|' == dir.leave_trail(&'.') {print_matrix(&m , x, y); return true},
-                _ => {}
-                
-            }
-            dir = dir.turn_right();
-
+        if !seen_dir.insert((i, j, loop_dir)) {
+            //print_matrix(m.clone(), &seen_dir, (object.0, object.1));
+            return  true;
         }
 
-        (i, j) = dir.update_pos(i, j);
+        (i, j) = loop_dir.update_pos(i, j);
+        if (i < h && j < v && m[i][j] == '#') || ( i == object.0 && j == object.1)  {
+            (i, j) = loop_dir.turn_right().turn_right().update_pos(i, j);
+            loop_dir = loop_dir.turn_right();
+        } 
+
     }
+
     false
 }
 
 pub fn solve() -> SolutionPair {
     // Your solution here...
-    let sol1: u64 = 0;
     let mut sol2: u64 = 0;
 
     let path = Path::new("inputs/day6-1.txt");
-    let mut m: Vec<Vec<char>> = read_file_to_matrix(path);
+    let m: Vec<Vec<char>> = read_file_to_matrix(path);
     let mut seen: HashSet<(usize, usize)> = HashSet::new();
+    let mut seen_dir: HashSet<(usize, usize, Direction)> = HashSet::new();
 
     let (h, v) = (m.len(), m[0].len());
     let (mut i, mut j) = find_guard(&m, &h, &v).expect("No guard found");
@@ -131,26 +131,21 @@ pub fn solve() -> SolutionPair {
     // let mut tracks: Vec<Vec<Option<Direction>>> = vec![vec![; v]; h];
 
     while i < h && j < v {
-        
-        m[i][j] = dir.leave_trail(&m[i][j]);
+               
+        seen.insert((i, j));
+        seen_dir.insert((i, j, dir));
 
-        if m[i][j] == '#' {
+        if does_loop_exists(&dir, &m, &i, &j, seen_dir.clone(), &seen) {
+            sol2 += 1;
+        }
+
+        (i, j) = dir.update_pos(i, j);
+        if i < h && j < v && m[i][j] == '#' {
             (i, j) = dir.turn_right().turn_right().update_pos(i, j);
             dir = dir.turn_right();
         } 
-            if does_loop_exists(dir.turn_right(), m.clone(), i.clone(), j.clone()) {
-                sol2 += 1;
-                // println!("Found at {}, {}", i, j);
-                let (x, y) = dir.update_pos(i, j);
-                //print_matrix(&m , x, y);
-            
-        }
-
-        seen.insert((i, j));
-
         
        
-        (i, j) = dir.update_pos(i, j);
     }
 
     (Solution::from(seen.len()), Solution::from(sol2))
